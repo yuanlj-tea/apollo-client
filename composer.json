@@ -2,6 +2,7 @@
     "name": "yuanlj-tea/apollo-client",
     "description": "php apollo client",
     "type": "library",
+    "license": "MIT",
     "authors": [
         {
             "name": "yuanlj",
