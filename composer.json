@@ -1,0 +1,31 @@
+{
+    "name": "yuanlj-tea/apollo-client",
+    "description": "php apollo client",
+    "type": "library",
+    "authors": [
+        {
+            "name": "yuanlj",
+            "email": "1107806823@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1",
+        "guzzlehttp/guzzle": "^6.5",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ApolloClient\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ApolloClient\\ApolloClientServiceProvider"
+            ],
+            "aliases": {
+                "Apollo": "ApolloClient\\ApolloFacade"
+            }
+        }
+    }
+}
