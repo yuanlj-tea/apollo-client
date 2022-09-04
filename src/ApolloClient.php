@@ -306,7 +306,6 @@ class ApolloClient
                 'Authorization' => sprintf("Apollo %s:%s", $this->appId, $sign),
                 'Timestamp' => $microtime,
             ],
-            'proxy' => 'http://127.0.0.1:8888',
         ];
 
         return $header;
