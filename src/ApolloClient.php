@@ -286,6 +286,35 @@ class ApolloClient
         return $url;
     }
 
+    public function buildHeader($url)
+    {
+        $microtime = intval(microtime(true) * 1000);
+        $pathWithQuery = $this->url2PathWithQuery($url);
+        $stringToSign = strval($microtime) . "\n" . $pathWithQuery;
+        $sign = hash_hmac('sha1', $stringToSign, 'e1146b2777734fc3941dcad04dad7858');
+
+        $header = [
+            'headers' => [
+                'Authorization' => sprintf("Apollo %s:%s", $this->appId, $sign),
+                'Timestamp' => $microtime,
+            ],
+            // 'proxy' => 'http://127.0.0.1:8888',
+        ];
+
+        return $header;
+    }
+
+    public function url2PathWithQuery($url)
+    {
+        $data = parse_url($url);
+        $pathWithQuery = $data['path'];
+        if (!empty($data['query'])) {
+            $pathWithQuery .= '?' . $data['query'];
+        }
+
+        return $pathWithQuery;
+    }
+
     private function longPull($callback = null)
     {
         while (true) {
@@ -293,7 +322,9 @@ class ApolloClient
                 $url = $this->buildNotificationUrl();
 
                 //发起请求,配置若无变更,服务端会hold住请求60秒
-                $res = (new Client(['timeout' => $this->intervalTimeout]))->request('GET', $url);
+                $res = (new Client(['timeout' => $this->intervalTimeout]))->request('GET', $url, $this->buildHeader($url));
+                var_dump($res);
+                die;
                 $resStatusCode = $res->getStatusCode();
                 $resContents = $res->getBody()->getContents();
 
@@ -318,6 +349,7 @@ class ApolloClient
                 }
             } catch (\Exception $e) {
                 $this->info(__LINE__, sprintf("[FILE--1] %s || [LINE] %s || [MSG] %s", $e->getFile(), $e->getLine(), $e->getMessage()));
+                throw $e;
             }
         }
     }
@@ -349,7 +381,7 @@ class ApolloClient
             $p[$k]['method'] = 'get';
             $p[$k]['uri'] = $url;
         }
-        $res = $this->parallelRequest($p, ['timeout' => $this->pullTimeOut]);
+        $res = $this->parallelRequest($p, ['timeout' => $this->pullTimeOut, 'Authorization' => 'e1146b2777734fc3941dcad04dad7858']);
 
         $responseList = [];
         $responseData = [];
