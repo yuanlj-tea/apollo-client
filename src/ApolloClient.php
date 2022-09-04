@@ -93,6 +93,8 @@ class ApolloClient
      */
     private $envTplFileName = '.env_tpl.php';
 
+    private $secret;
+
     const DS = DIRECTORY_SEPARATOR;
 
     public function __construct($baseUrl, $appId, $namespaceList)
@@ -138,6 +140,12 @@ class ApolloClient
             throw new InvalidArgumentException('无效的env文件名');
         }
         $this->envFileName = $envFileName;
+        return $this;
+    }
+
+    public function setsecret(string $secret)
+    {
+        $this->secret = $secret;
         return $this;
     }
 
@@ -290,15 +298,15 @@ class ApolloClient
     {
         $microtime = intval(microtime(true) * 1000);
         $pathWithQuery = $this->url2PathWithQuery($url);
-        $stringToSign = strval($microtime) . "\n" . $pathWithQuery;
-        $sign = hash_hmac('sha1', $stringToSign, 'e1146b2777734fc3941dcad04dad7858');
+        $stringToSign = mb_convert_encoding($microtime . "\n" . $pathWithQuery, "UTF-8");
+        $sign = base64_encode(hash_hmac('sha1', $stringToSign, $this->secret, true));
 
         $header = [
             'headers' => [
                 'Authorization' => sprintf("Apollo %s:%s", $this->appId, $sign),
                 'Timestamp' => $microtime,
             ],
-            // 'proxy' => 'http://127.0.0.1:8888',
+            'proxy' => 'http://127.0.0.1:8888',
         ];
 
         return $header;
@@ -323,8 +331,6 @@ class ApolloClient
 
                 //发起请求,配置若无变更,服务端会hold住请求60秒
                 $res = (new Client(['timeout' => $this->intervalTimeout]))->request('GET', $url, $this->buildHeader($url));
-                var_dump($res);
-                die;
                 $resStatusCode = $res->getStatusCode();
                 $resContents = $res->getBody()->getContents();
 
@@ -380,8 +386,9 @@ class ApolloClient
 
             $p[$k]['method'] = 'get';
             $p[$k]['uri'] = $url;
+            $p[$k]['options'] = $this->buildHeader($url);
         }
-        $res = $this->parallelRequest($p, ['timeout' => $this->pullTimeOut, 'Authorization' => 'e1146b2777734fc3941dcad04dad7858']);
+        $res = $this->parallelRequest($p, ['timeout' => $this->pullTimeOut]);
 
         $responseList = [];
         $responseData = [];
@@ -412,7 +419,7 @@ class ApolloClient
         $promise = [];
         $client = new Client($options);
         foreach ($data as $k => $v) {
-            $promise[] = $client->requestAsync(strtoupper($v['method']), $v['uri'], $v['data'] ?? []);
+            $promise[] = $client->requestAsync(strtoupper($v['method']), $v['uri'], $v['options'] ?? []);
         }
         $results = Promise\unwrap($promise);
         return $results;

@@ -26,8 +26,9 @@ function pullToEnv()
     //方式2
     $envFullPath = __DIR__ . '/env-3';
     $client->setCluster($cluster)       //设置集群名
-    ->setEnvPath($envFullPath)      //设置env文件存储的完整路径
-    ->startLongPull(2);
+        ->setEnvPath($envFullPath)      //设置env文件存储的完整路径
+        ->setsecret('e1146b2777734fc3941dcad04dad7858')
+        ->startLongPull(2);
 }
 
 pullToEnv();
